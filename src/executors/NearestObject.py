@@ -1,6 +1,7 @@
 
 import os
 import sys
+import copy
 import json
 import numpy as np
 
@@ -19,6 +20,9 @@ class NearestObject(Component):
         self.roi = json.loads(self.request.get_param("configRoi"))
         self.detections_input = self.request.get_param("inputDetections")
         self.measure_target = self.request.get_param("configMeasureType")
+        print(self.measure_target)
+        print(self.detections_input)
+        print(self.roi)
 
     @staticmethod
     def bootstrap(config: dict) -> dict:
@@ -27,7 +31,7 @@ class NearestObject(Component):
     def run(self):
         roi_lines = self.roi.get('lines', [])
         if len(roi_lines) < 2:
-            raise ValueError("At least 2 lines (ROI) are required for measurement.")
+            raise ValueError("ERROR: At least 2 lines (ROI) are required for measurement.")
 
         ref_line_1 = roi_lines[0]
         ref_line_2 = roi_lines[1]
@@ -62,16 +66,26 @@ class NearestObject(Component):
         all_x_values = coordinates_xy[:, 0]
         dist_to_ref1 = np.abs(all_x_values - x_ref_left)
         idx_1 = np.argmin(dist_to_ref1)
+        point_1 = coordinates_xy[idx_1]
         dist_to_ref2 = np.abs(all_x_values - x_ref_right)
         idx_2 = np.argmin(dist_to_ref2)
-        closest_detection_1 = points_source[idx_1]
-        closest_detection_2 = points_source[idx_2]
-        filtered_detections = []
-        filtered_detections.append(closest_detection_1)
+        point_2 = coordinates_xy[idx_2]
 
-        if closest_detection_2 != closest_detection_1:
-            filtered_detections.append(closest_detection_2)
-        self.detections = filtered_detections
+        euclidean_distance = np.linalg.norm(point_1 - point_2)
+        print(f"Mode: {self.measure_target} | Distance: {euclidean_distance:.2f}px")
+        source_detection = points_source[idx_1]
+        result_detection = copy.deepcopy(source_detection)
+        if 'attributes' not in result_detection:
+            result_detection['attributes'] = {}
+
+        result_detection['attributes']['distance_px'] = float(euclidean_distance)
+        result_detection['attributes']['mode'] = self.measure_target
+        result_detection['keyPoints'] = [
+            {"cx": float(point_1[0]), "cy": float(point_1[1])},
+            {"cx": float(point_2[0]), "cy": float(point_2[1])}
+        ]
+        self.detections = [result_detection]
+
         return build_response(context=self)
 
 
