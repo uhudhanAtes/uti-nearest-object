@@ -79,7 +79,6 @@ class NearestObject(Component):
             {"cx": float(point_2[0]), "cy": float(point_2[1])}
         ]
         self.detections = [result_detection]
-
         return build_response(context=self)
 
 
