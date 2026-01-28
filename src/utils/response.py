@@ -4,8 +4,8 @@ from components.NearestObject.src.models.PackageModel import PackageModel, Packa
 
 
 def build_response(context):
-    outputImage = OutputDetections(value=context.image)
-    Outputs = NearestObjectOutputs(outputImage=outputImage)
+    outputDetections = OutputDetections(value=context.detections)
+    Outputs = NearestObjectOutputs(outputDetections=outputDetections)
     packageResponse = NearestObjectResponse(outputs=Outputs)
     packageExecutor = NearestObject(value=packageResponse)
     executor = ConfigExecutor(value=packageExecutor)
