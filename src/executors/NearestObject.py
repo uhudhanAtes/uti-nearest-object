@@ -20,9 +20,6 @@ class NearestObject(Component):
         self.roi = json.loads(self.request.get_param("configRoi"))
         self.detections_input = self.request.get_param("inputDetections")
         self.measure_target = self.request.get_param("configMeasureType")
-        print(self.measure_target)
-        print(self.detections_input)
-        print(self.roi)
 
     @staticmethod
     def bootstrap(config: dict) -> dict:
@@ -70,14 +67,11 @@ class NearestObject(Component):
         dist_to_ref2 = np.abs(all_x_values - x_ref_right)
         idx_2 = np.argmin(dist_to_ref2)
         point_2 = coordinates_xy[idx_2]
-
         euclidean_distance = np.linalg.norm(point_1 - point_2)
-        print(f"Mode: {self.measure_target} | Distance: {euclidean_distance:.2f}px")
         source_detection = points_source[idx_1]
         result_detection = copy.deepcopy(source_detection)
         if 'attributes' not in result_detection:
             result_detection['attributes'] = {}
-
         result_detection['attributes']['distance_px'] = float(euclidean_distance)
         result_detection['attributes']['mode'] = self.measure_target
         result_detection['keyPoints'] = [
