@@ -62,11 +62,8 @@ class NearestObject(Component):
         all_x_values = coordinates_xy[:, 0]
         dist_to_ref1 = np.abs(all_x_values - x_ref_left)
         idx_1 = np.argmin(dist_to_ref1)
-        point_1 = coordinates_xy[idx_1]
         dist_to_ref2 = np.abs(all_x_values - x_ref_right)
         idx_2 = np.argmin(dist_to_ref2)
-        point_2 = coordinates_xy[idx_2]
-        euclidean_distance = np.linalg.norm(point_1 - point_2)
         closest_detection_1 = points_source[idx_1]
         closest_detection_2 = points_source[idx_2]
         filtered_detections = []
