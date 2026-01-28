@@ -22,6 +22,43 @@ class OutputDetections(Output):
         title = "Detections"
 
 
+class MeasureOptionBBox(Config):
+    name: Literal["BoundingBox"] = "BoundingBox"
+    value: Literal["boundingBox"] = "boundingBox"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "Bounding Box"
+
+
+class MeasureOptionKeyPoints(Config):
+    name: Literal["KeyPoints"] = "KeyPoints"
+    value: Literal["keyPoints"] = "keyPoints"
+    type: Literal["string"] = "string"
+    field: Literal["option"] = "option"
+
+    class Config:
+        title = "KeyPoints"
+
+
+class ConfigMeasureType(Config):
+    """
+        Select which data type to use for distance measurement:
+        Bounding Boxes (center point) or Keypoints.
+    """
+    name: Literal["configMeasureType"] = "configMeasureType"
+    value: Union[MeasureOptionKeyPoints, MeasureOptionBBox]
+    type: Literal["object"] = "object"
+    field: Literal["dropdownlist"] = "dropdownlist"
+
+    class Config:
+        title = "Measurement Target"
+        json_schema_extra = {
+            "shortDescription": "Target Data for ROI"
+        }
+
+
 class ConfigRoi(Config):
     """
         Configures the Region of Interest (ROI) for proximity detection.
@@ -53,6 +90,7 @@ class NearestObjectInputs(Inputs):
 
 class NearestObjectConfigs(Configs):
     configRoi: ConfigRoi
+    configMeasureType: ConfigMeasureType
 
 
 class NearestObjectOutputs(Outputs):
