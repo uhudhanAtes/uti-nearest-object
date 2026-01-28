@@ -19,7 +19,6 @@ class NearestObject(Component):
         self.roi = json.loads(self.request.get_param("configRoi"))
         self.detections_input = self.request.get_param("inputDetections")
         self.measure_target = self.request.get_param("configMeasureType")
-        print(self.measure_target)
 
     @staticmethod
     def bootstrap(config: dict) -> dict:
@@ -76,7 +75,6 @@ class NearestObject(Component):
         if closest_detection_2 != closest_detection_1:
             filtered_detections.append(closest_detection_2)
         self.detections = filtered_detections
-
         return build_response(context=self)
 
 
