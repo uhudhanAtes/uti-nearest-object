@@ -76,22 +76,22 @@ class NearestObject(Component):
 
         coordinates_xy = np.array(points_coords)
         if self.measure_target == "keyPoints":
-            result_detection = copy.deepcopy(points_source[0])
-            filtered_kps = []
+            new_detections = []
 
-            for line in roi_lines:
+            for idx, line in enumerate(roi_lines):
                 l_start = [line['x1'], line['y1']]
                 l_end = [line['x2'], line['y2']]
                 distances = self.get_distance_point_to_segment(coordinates_xy, l_start, l_end)
                 nearest_idx = np.argmin(distances)
-
-                filtered_kps.append({
+                new_obj = copy.deepcopy(points_source[nearest_idx])
+                new_obj['classLabel'] = f"k{idx + 1}"
+                new_obj['keyPoints'] = [{
                     "cx": float(coordinates_xy[nearest_idx][0]),
                     "cy": float(coordinates_xy[nearest_idx][1])
-                })
+                }]
 
-            result_detection['keyPoints'] = filtered_kps
-            self.detections = [result_detection]
+                new_detections.append(new_obj)
+            self.detections = new_detections
 
         else:
             selected_detections = []
