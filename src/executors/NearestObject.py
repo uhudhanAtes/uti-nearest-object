@@ -50,30 +50,23 @@ class NearestObject(Component):
 
     def run(self):
         roi_lines = self.roi.get('lines', [])
-        if len(roi_lines) < 2:
-            raise ValueError("ERROR: At least 2 lines (ROI) are required for measurement.")
+        if not roi_lines:
+            raise ValueError("ERROR: At least 1 line (ROI) is required.")
 
-        line1_start = [roi_lines[0]['x1'], roi_lines[0]['y1']]
-        line1_end = [roi_lines[0]['x2'], roi_lines[0]['y2']]
-        line2_start = [roi_lines[1]['x1'], roi_lines[1]['y1']]
-        line2_end = [roi_lines[1]['x2'], roi_lines[1]['y2']]
         points_coords = []
         points_source = []
-
         if self.detections_input:
             for detection in self.detections_input:
                 if self.measure_target == "keyPoints":
                     kps = detection.get('keyPoints', [])
-                    if kps:
-                        for kp in kps:
-                            points_coords.append([kp['cx'], kp['cy']])
-                            points_source.append(detection)
-
+                    for kp in kps:
+                        points_coords.append([kp['cx'], kp['cy']])
+                        points_source.append(detection)
                 elif self.measure_target == "boundingBox":
                     bbox = detection.get('boundingBox')
                     if bbox:
-                        cx = bbox['x'] + (bbox['w'] / 2)
-                        cy = bbox['y'] + (bbox['h'] / 2)
+                        cx = bbox['left'] + (bbox['width'] / 2)
+                        cy = bbox['top'] + (bbox['height'] / 2)
                         points_coords.append([cx, cy])
                         points_source.append(detection)
 
@@ -82,30 +75,41 @@ class NearestObject(Component):
             return build_response(context=self)
 
         coordinates_xy = np.array(points_coords)
-        dist_to_line1 = self.get_distance_point_to_segment(coordinates_xy, line1_start, line1_end)
-        idx_1 = np.argmin(dist_to_line1)
-        point_1 = coordinates_xy[idx_1]
-        dist_to_line2 = self.get_distance_point_to_segment(coordinates_xy, line2_start, line2_end)
-        idx_2 = np.argmin(dist_to_line2)
-        if idx_1 == idx_2 and len(coordinates_xy) > 1:
-            dist_to_line2[idx_1] = np.inf
-            idx_2 = np.argmin(dist_to_line2)
+        if self.measure_target == "keyPoints":
+            result_detection = copy.deepcopy(points_source[0])
+            filtered_kps = []
 
-        point_2 = coordinates_xy[idx_2]
-        euclidean_distance = np.linalg.norm(point_1 - point_2)
-        source_detection = points_source[idx_1]
-        result_detection = copy.deepcopy(source_detection)
+            for line in roi_lines:
+                l_start = [line['x1'], line['y1']]
+                l_end = [line['x2'], line['y2']]
+                distances = self.get_distance_point_to_segment(coordinates_xy, l_start, l_end)
+                nearest_idx = np.argmin(distances)
 
-        if 'attributes' not in result_detection:
-            result_detection['attributes'] = {}
+                filtered_kps.append({
+                    "cx": float(coordinates_xy[nearest_idx][0]),
+                    "cy": float(coordinates_xy[nearest_idx][1])
+                })
 
-        result_detection['attributes']['distance_px'] = float(euclidean_distance)
-        result_detection['attributes']['mode'] = self.measure_target
-        result_detection['keyPoints'] = [
-            {"cx": float(point_1[0]), "cy": float(point_1[1])},
-            {"cx": float(point_2[0]), "cy": float(point_2[1])}
-        ]
-        self.detections = [result_detection]
+            result_detection['keyPoints'] = filtered_kps
+            self.detections = [result_detection]
+
+        else:
+            selected_detections = []
+            selected_indices = set()
+
+            for line in roi_lines:
+                l_start = [line['x1'], line['y1']]
+                l_end = [line['x2'], line['y2']]
+                distances = self.get_distance_point_to_segment(coordinates_xy, l_start, l_end)
+                nearest_idx = np.argmin(distances)
+
+                if nearest_idx not in selected_indices:
+                    selected_detections.append(copy.deepcopy(points_source[nearest_idx]))
+                    selected_indices.add(nearest_idx)
+
+            self.detections = selected_detections
+
+        print(self.detections)
         return build_response(context=self)
 
 
